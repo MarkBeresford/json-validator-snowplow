@@ -1,4 +1,4 @@
-name := """json-formatter-snowplow"""
+name := """json-validator-snowplow"""
 organization := "com.example"
 
 version := "1.0-SNAPSHOT"
