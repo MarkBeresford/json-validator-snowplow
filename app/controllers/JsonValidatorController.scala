@@ -1,52 +1,55 @@
 package controllers
 
 import play.api.mvc._
-import play.api.db._
-import play.api.Logger
+import org.slf4j.{Logger, LoggerFactory}
 
 import javax.inject.Inject
-
 import com.fasterxml.jackson.databind.JsonNode
 import com.github.fge.jsonschema.core.report.ProcessingReport
 import com.github.fge.jackson.JsonLoader.fromString
-
 import io.circe.generic.auto._
 import io.circe.syntax._
-
-import utils.{Response, JsonSchema}
+import utils.JsonSchema
 import utils.Response._
 import utils.ValidationJsonHelperFunctions._
 import utils.DatabaseUtilityFunctions._
+import utils.DataBaseImplementation.db
 
 
-class JsonValidatorController @Inject()(
-                                         val controllerComponents: ControllerComponents,
-                                         implicit val db: Database,
-                                         implicit val databaseExecutionContext: DatabaseExecutionContext)
-  extends BaseController {
+case class JsonValidatorController @Inject()(controllerComponents: ControllerComponents) extends BaseController {
 
-  implicit val logger: Logger = Logger(this.getClass())
+  implicit val logger: Logger = LoggerFactory.getLogger(this.getClass())
 
   def validateJsonAgainSchema(schemaId: String): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
-    val jsonWithoutNulls: String = getJsonToValidateFromRequestBody(request)
-    val jsonToValidate: JsonNode = fromString(jsonWithoutNulls)
-    val schemaToValidateAgainst: Option[JsonSchema] = getSchemaFromDB(schemaId)
-    schemaToValidateAgainst match {
-      case Some(schema) =>
-        val jsonValidationReport: ProcessingReport = generateJsonProcessingReport(jsonToValidate, schema)
-        if (jsonValidationReport.isSuccess) validationSuccessResponse(schemaId, jsonWithoutNulls)
-        else {
-          val errorMessages = getErrorMessagesFromProcessingReport(jsonValidationReport)
-          validationFailedErrorResponse(schemaId, errorMessages)
+    val jsonWithoutNullsOption: Option[String] = getJsonToValidateFromRequestBody(request)
+    jsonWithoutNullsOption match {
+      case Some(jsonWithoutNulls: String) =>
+        val jsonToValidate: JsonNode = fromString(jsonWithoutNulls)
+        val schemaToValidateAgainst: Option[JsonSchema] = getSchemaFromDB(schemaId)
+        schemaToValidateAgainst match {
+          case Some(schemas: JsonSchema) =>
+            val jsonValidationReport: ProcessingReport = generateJsonProcessingReport(jsonToValidate, schemas)
+            if (jsonValidationReport.isSuccess) {
+              validationSuccessResponse(schemaId, jsonWithoutNulls)
+            } else {
+              val errorMessages = getErrorMessagesFromProcessingReport(jsonValidationReport)
+              validationFailedErrorResponse(schemaId, errorMessages)
+            }
+          case _ =>
+            logger.error(s"Error when finding schema for schemaId: $schemaId.")
+            noSchemaMatchingSchemaIdResponse(schemaId)
         }
-      case None =>
-        noSchemaMatchingSchemaIdResponse(schemaId)
+      case None => noSchemaParsedInRequestResponse()
     }
+
   }
 
   def uploadSchema(schemaId: String): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
-    val jsonSchema: String = getDataFromRequestBody(request)
-    insertSchemaIntoDB(schemaId, jsonSchema)
+    val jsonSchemaOption: Option[String] = getDataFromRequestBody(request)
+    jsonSchemaOption match {
+      case Some(jsonSchema: String) => insertSchemaIntoDB(schemaId, jsonSchema)
+      case None => noSchemaParsedInRequestResponse()
+    }
   }
 
   def getSchema(schemaId: String): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>

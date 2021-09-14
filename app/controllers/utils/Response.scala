@@ -8,20 +8,19 @@ import scala.collection.mutable.ListBuffer
 
 case class Response(
                      action: String,
-                     id: String,
+                     id: Option[String] = None,
                      status: String,
                      message: Option[String] = None,
                      validJson: Option[String] = None
                    )
 
 object Response{
-  // TODO: Should these Reponses contian PUT, GET, POST etc????
   def validationSuccessResponse(schemaId: String, jsonWithoutNulls: String): mvc.Result =
     Ok(
       prettyPrintJsonResponse(
         Response(
           "validateDocument",
-          schemaId,
+          Some(schemaId),
           "success",
           validJson = Some(jsonWithoutNulls)
         )
@@ -32,7 +31,7 @@ object Response{
     prettyPrintJsonResponse(
       Response(
         "validateDocument",
-        schemaId,
+        Some(schemaId),
         "error",
         message = Some("Error Messages: " + errorMessages.mkString(", ")))
     )
@@ -41,10 +40,10 @@ object Response{
   def noSchemaMatchingSchemaIdResponse(schemaId: String): mvc.Result = BadRequest(
     prettyPrintJsonResponse(
       Response(
-        "validateDocument",
-        schemaId,
+        "getSchema",
+        Some(schemaId),
         "error",
-        message = Some(s"No Valid JSON schema found for $schemaId.")
+        message = Some(s"No Valid JSON schema found with schemaId: $schemaId.")
       )
     )
   )
@@ -53,8 +52,9 @@ object Response{
     prettyPrintJsonResponse(
       Response(
         "uploadSchema",
-        schemaId,
-        "success")
+        Some(schemaId),
+        "success"
+      )
     )
   )
 
@@ -62,9 +62,9 @@ object Response{
     prettyPrintJsonResponse(
       Response(
         "uploadSchema",
-        schemaId,
+        Some(schemaId),
         status = "error",
-        message = Some("Json schema upload Failed."))
+        message = Some("Json schema upload Failed. Does the id you are using for the schema already exist?"))
     )
   )
 
@@ -72,12 +72,21 @@ object Response{
     Ok(
       prettyPrintJsonResponse(
         Response(
-          "uploadSchema",
-          schemaId,
-          status = "error",
-          message = Some("Json schema upload Failed."),
-          validJson = Some(jsonSchema)
+          "getSchema",
+          Some(schemaId),
+          status = "success",
+          message = Some(jsonSchema)
         )
       )
     )
+
+  def noSchemaParsedInRequestResponse(): mvc.Result = BadRequest(
+    prettyPrintJsonResponse(
+      Response(
+        action = "validateDocument",
+        status = "error",
+        message = Some(s"Empty Json to validate against.")
+      )
+    )
+  )
 }

@@ -8,7 +8,7 @@ import controllers.utils.DatabaseUtilityFunctions.getDataFromRequestBody
 import io.circe.parser.{decode => circleDecode, parse => circleParse}
 import io.circe.{ParsingFailure, Json => circleJson}
 import io.circe.generic.auto._
-import play.api.Logger
+import org.slf4j.Logger
 import play.api.mvc.{AnyContent, Request}
 
 import java.util
@@ -45,14 +45,20 @@ object ValidationJsonHelperFunctions {
     errorMessages
   }
 
-  def getJsonToValidateFromRequestBody(request: Request[AnyContent]): String = {
-    val dataRequestBody: String = getDataFromRequestBody(request)
-    val dataRequestBodyAsJson: Either[ParsingFailure, circleJson] = circleParse(dataRequestBody)
-    val jsonWithoutNulls: String = dataRequestBodyAsJson
-      .getOrElse(circleJson.Null)
-      .deepDropNullValues
-      .noSpaces
-    jsonWithoutNulls
+  def getJsonToValidateFromRequestBody(request: Request[AnyContent]): Option[String] = {
+    val dataRequestBody: Option[String] = getDataFromRequestBody(request)
+    dataRequestBody match {
+      case Some(requestBody) => {
+        Some(
+          circleParse(requestBody)
+            .getOrElse(circleJson.Null)
+            .deepDropNullValues
+            .noSpaces
+        )
+      }
+      case None => None
+
+    }
   }
 
 }
