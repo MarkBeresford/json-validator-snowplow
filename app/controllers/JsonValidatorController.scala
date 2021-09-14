@@ -39,7 +39,7 @@ case class JsonValidatorController @Inject()(controllerComponents: ControllerCom
             logger.error(s"Error when finding schema for schemaId: $schemaId.")
             noSchemaMatchingSchemaIdResponse(schemaId)
         }
-      case None => noSchemaParsedInRequestResponse()
+      case None => noSchemaToValidateAgainstParsedInRequestResponse()
     }
 
   }
@@ -48,7 +48,7 @@ case class JsonValidatorController @Inject()(controllerComponents: ControllerCom
     val jsonSchemaOption: Option[String] = getDataFromRequestBody(request)
     jsonSchemaOption match {
       case Some(jsonSchema: String) => insertSchemaIntoDB(schemaId, jsonSchema)
-      case None => noSchemaParsedInRequestResponse()
+      case None => noSchemaToUploadParsedInRequestResponse(schemaId)
     }
   }
 

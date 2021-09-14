@@ -80,12 +80,23 @@ object Response{
       )
     )
 
-  def noSchemaParsedInRequestResponse(): mvc.Result = BadRequest(
+  def noSchemaToValidateAgainstParsedInRequestResponse(): mvc.Result = BadRequest(
     prettyPrintJsonResponse(
       Response(
         action = "validateDocument",
         status = "error",
         message = Some(s"Empty Json to validate against.")
+      )
+    )
+  )
+
+  def noSchemaToUploadParsedInRequestResponse(schemaId: String): mvc.Result = BadRequest(
+    prettyPrintJsonResponse(
+      Response(
+        action = "uploadSchema",
+        id = Some(schemaId),
+        status = "error",
+        message = Some(s"Empty Schema to upload.")
       )
     )
   )
