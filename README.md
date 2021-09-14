@@ -58,7 +58,7 @@ You should see an output similar to the following:
 2021-09-14 07:49:44.004 BST [2760] LOG:  database system is ready to accept connections
 
 ```
-this indicates the the PostgresSQL database has starting and is ready to recieve requests from the frountent.
+this indicates the PostgresSQL database has starting and is ready to recieve requests from the frountent.
 
 ### Endpoints Overview
 This application has three endpoints:
@@ -69,7 +69,7 @@ GET     /schema/SCHEMAID        - Download a JSON Schema with unique `SCHEMAID`
 POST    /validate/SCHEMAID      - Validate a JSON document against the JSON Schema identified by `SCHEMAID`
 ```
 #### POST /schema/SCHEMAID
-The POST Schema endpoint uploads a schema which can then be used to validate against. For example to upload a JSON schema the curl command would look similar to:
+The `POST` Schema endpoint uploads a schema which can then be used to validate against. For example to upload a JSON schema the curl command would look similar to:
 `curl http://localhost:9000/schema/config-schema -X POST -d @config-schema.json` were `config-schema.json` is a local file containing the schema and `config-schema` is the id I want to assign to the schema.
 If the schema is uploaded successfull the following response will be returned: 
 ```
@@ -92,7 +92,7 @@ The `SCHEMAID` should be unique, if a schema already exists with that `SCHEMAID`
 ```
 
 #### GET /schema/SCHEMAID 
-The GET Schema endpoint returns a schema which can then be used to validate against. For example to get a JSON schema the curl command would look similar to:
+The `GET` Schema endpoint returns a schema which can then be used to validate against. For example to get a JSON schema the curl command would look similar to:
 `curl http://localhost:9000/schema/config-schema -X GET` were `config-schema` is the id of the schema I want to retrieve.
 If a schema exists with the `SCHEMAID` I parse in I should get a response similar to:
 ```
@@ -112,3 +112,24 @@ If a schema with `SCHEMAID` does not exist I should get a response similar to:
 }
 ```
 #### POST /validate/SCHEMAID
+The `POST` validation enpoint validates a parsed in json file against a given Schema. For example to validate the JSON in a file `config.json` the curl would look similar to:
+`curl http://localhost:9000/validate/config-schema -X POST -d @config.json` were `config-schema` is the Id of the schema to validate against.
+If the schema exists and the JSON is valid the response would look similar to:
+```
+{
+    "action":"validateDocument",
+    "id":"config-schema",
+    "status":"success",
+    "validJson":"{..."}
+}
+```
+the json returned in the `validJson` field will contain the json which was in `config.json` without the `null` fields.
+If there is no schema matching the Id parsed in in the curl the reponse would look similar to:
+```
+{
+    "action":"getSchema",
+    "id":"not-a-schema",
+    "status":"error",
+    "message":"No Valid JSON schema found with schemaId: not-a-schema."
+}
+```
