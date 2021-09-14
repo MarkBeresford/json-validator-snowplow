@@ -7,7 +7,7 @@ import play.api.inject.ApplicationLifecycle
 import javax.inject.Inject
 
 class ApplicationLifeCycle @Inject() (lifecycle: ApplicationLifecycle) {
-  implicit val logger: Logger = LoggerFactory.getLogger(this.getClass())
+  implicit val logger: Logger = LoggerFactory.getLogger("ApplicationLifeCycle")
   import utils.DataBaseImplementation.db
   logger.info("Creating database Schemas.")
   createSchemaTable(db, logger)
